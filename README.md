@@ -9,9 +9,6 @@ The evaluation entry point supports a MNIST MLP, a MNIST CNN, and a CIFAR-10
 CNN5. Pretrained checkpoints and experiment configurations are included.
 Evaluation uses saved weights; retraining is not required.
 
-**Current checkout:** `src/data.py` is missing, and the shared bound module has
-an import-layout mismatch. Resolve the [integration requirements](#integration-requirements)
-before running the examples below.
 
 ## Repository structure
 
