@@ -1,0 +1,32 @@
+seed: 0
+batch_size: 128
+test_batch_size: 512
+epochs: 15
+lr: 0.001
+weight_decay: 0.0001
+epsilon_train: 0.1
+epsilon_eval: 0.1
+alpha_robust: 0.5
+
+model_type: cnn
+
+# Available robust-bound backends:
+#   interval : simple forward interval bound surrogate.
+#   dual     : CROWN-style backward bound; sign-dependent ReLU line choice.
+#   dual_WK  : Wong--Kolter fixed-alpha LP-dual objective J_epsilon.
+#   deeppoly
+#   ibp
+#   crown_IBP
+bound_method: IBP
+
+#use GLS smoothing to loosen bounds
+use_rgs: true
+rgs_sigma: 0.001
+rgs_nps: 2
+
+linear_size: 100
+n1: 16
+n2: 32
+checkpoint_dir: checkpoints
+checkpoint_dir_gls: checkpoints/GLS
+data_dir: data

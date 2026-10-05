@@ -1,0 +1,33 @@
+seed: 0
+batch_size: 128
+test_batch_size: 512
+epochs: 15
+lr: 0.001
+weight_decay: 0.0001
+epsilon_train: 0.1
+epsilon_eval: 0.1
+alpha_robust: 0.5
+
+model_type: cnn
+bound_method: dual_WK
+
+# Gaussian Loss Smoothing / Randomized Gradient Smoothing.
+use_rgs: true
+rgs_sigma: 0.001
+rgs_nps: 2
+
+# Zhu et al. relaxation-tightness regularizers.
+
+regularizers: true
+lambda: 0.005   # output-gap d weight
+gamma: 0.5      # internal preactivation-consistency r weight
+reg_max_targets: 9
+
+linear_size: 100
+n1: 16
+n2: 32
+checkpoint_dir: checkpoints
+checkpoint_dir_gls: checkpoints/GLS
+checkpoint_dir_rgs: checkpoints/RGS
+checkpoint_dir_rgs_gls: checkpoints/RGS/GLS
+data_dir: data

@@ -1,0 +1,116 @@
+# CIFAR-10 CNN-5 certified training configuration.
+#
+# Run from the project root:
+#   python -m src.train_cifar --config src/configs/cifar_lp.yaml
+#
+# CIFAR-10 must be loaded with transforms.ToTensor() only, leaving every
+# input channel in [0,1]. This matches the clipping assumptions in the
+# current IBP, CROWN, dual-WK, DeepPoly, and regularizer implementations.
+
+seed: 0
+data_dir: data
+
+# Model configuration.
+dataset: cifar10
+model_type: cnn5
+num_classes: 10
+input_channels: 3
+image_size: 32
+
+# CNN-5 widths.
+# c1: 16
+# c2: 32
+# c3: 64
+# linear_size: 128
+
+c1: 24
+c2: 48
+c3: 96
+linear_size: 192
+
+# Training configuration.
+#
+# A batch size of 32 is intentionally conservative because dual-WK,
+# RGS, and the sparse SOCP regularizer all increase memory usage.
+batch_size: 128
+test_batch_size: 256
+epochs: 41
+
+# Optimization.
+lr: 0.001
+weight_decay: 0.0005
+gradient_clip: 5.0
+
+# Reduce the learning rate after the full epsilon has been active long enough.
+lr_milestones:
+  - 30
+  - 40
+lr_gamma: 0.5
+
+# Requested perturbation radius:
+#   epsilon = 2/225 = 0.008888888...
+#
+# This is intentionally 2/225, not the more common 2/255.
+epsilon_train: 0.0088888889
+epsilon_eval: 0.0088888889
+
+# Slow epsilon warmup for stable certified training.
+# Each pair is [starting_epoch, fraction_of_epsilon_train].
+epsilon_schedule:
+  - [1, 0.0]
+  - [4, 0.125]
+  - [8, 0.25]
+  - [12, 0.50]
+  - [17, 0.75]
+  - [22, 1.0]
+
+  # - [1, 0.0]
+  # - [3, 0.125]
+  # - [5, 0.25]
+  # - [8, 0.50]
+  # - [11, 0.75]
+  # - [14, 1.0]
+
+# Robust objective.
+bound_method: dual_wk
+alpha_robust: 0.5
+
+# Sparse SOCP regularization.
+regularizers: true
+
+# The small epsilon produces a smaller relaxation gap than epsilon 0.1 or 0.3,
+# so begin with conservative regularization weights.
+lambda_reg: 0.005
+gamma_reg: 0.10
+reg_max_targets: 9
+
+# Select a small sparse subset of unstable neurons in each ReLU layer.
+# These settings control memory while still applying cross-neuron constraints.
+socp_top_k: 16
+socp_neighbors: 4
+
+# Keep learned lifted corrections small at this low epsilon.
+socp_correction_scale: 0.02
+socp_A_init_std: 0.005
+
+# Weight the lifted consistency term lightly and the PSD term moderately.
+socp_mu_lift: 0.10
+socp_mu_psd: 0.50
+
+# Randomized Gaussian smoothing.
+#
+# sigma is reduced from 0.001 to 0.0005 because the requested adversarial
+# radius is small. nps=2 averages two perturbed gradients without multiplying
+# the CIFAR training cost excessively.
+use_rgs: true
+rgs_start_epoch: 10
+rgs_sigma: 0.00005
+rgs_final_sigma: 0.00025
+rgs_nps: 4
+
+
+# Checkpoint paths.
+checkpoint_dir: checkpoints/cifar10  
+checkpoint_dir_gls: checkpoints/cifar10/GLS
+checkpoint_dir_reg: checkpoints/cifar10/REG
+checkpoint_dir_reg_gls: checkpoints/cifar10/REG/GLS

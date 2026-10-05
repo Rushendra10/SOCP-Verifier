@@ -1,0 +1,32 @@
+seed: 0
+
+data_dir: data
+checkpoint_dir: checkpoints
+
+epochs: 1
+batch_size: 128
+test_batch_size: 512
+
+lr: 0.001
+weight_decay: 0.0001
+
+alpha_robust: 0.5
+
+n1: 16
+n2: 32
+linear_size: 100
+
+# L_inf training radius for MNIST.
+epsilon_train: 0.3
+
+# Objective:
+#   L = lambda_clean CE + lambda_cert certified_LSE + lambda_socp SOCP_penalty
+lambda_clean: 1.0
+lambda_cert: 1.0
+lambda_socp: 0.01
+
+# Use the existing LP/CROWN dual bound as the certificate-safe base margin.
+base_bound_method: dual
+
+# Number of unstable ReLU neurons selected per ReLU layer for sparse SOCP structure.
+top_k_per_layer: 32

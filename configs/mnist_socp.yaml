@@ -1,0 +1,87 @@
+# MNIST sparse SOCP configuration.
+# Run:
+#   python -m src.SOCP.socp_train --config src/SOCP/configs/mnist_socp.yaml
+
+seed: 0
+data_dir: data
+checkpoint_dir: /home/grad/dsadig/SOCP/lp_mnist_dual/checkpoints 
+checkpoint_dir_GLS: /home/grad/dsadig/SOCP/lp_mnist_dual/checkpoints/GLS
+# checkpoints
+
+# Existing LP/Wong--Kolter MNIST architecture.
+n1: 16 #16
+n2: 32 #32
+linear_size: 100 #100
+
+# Training hyperparameters.
+epochs: 6
+batch_size: 128
+test_batch_size: 512
+lr: 0.0001 #0.001
+lr_drop_epoch: 4
+lr_drop_factor: 0.5
+weight_decay: 0.001
+model_type: cnn
+
+#If usinng CNN solve CNN layers using bound method
+bound_method: dual
+socp_feature_k: 128
+#Instead of using all flattened features, keep top-k features by dual/CROWN influence
+
+
+
+# Threat model.
+epsilon_train: 0.1
+
+# Certified loss weight.
+lambda_cert: 1.0
+alpha: 0.5
+# (1 - alpha) Clean(CE) + alpha(Robust(CE)
+
+# Exact SOCP certificate options.
+# gamma_backend controls Option-B sparse coupling selection:
+#   dual_WK = Wong--Kolter fixed-alpha LP-dual gamma (recommended)
+#   dual    = CROWN/LP backward gamma
+#   clean   = clean-margin gradient gamma, ablation only
+gamma_backend: dual_WK
+# WARNING: exact CVXPY solves are expensive.  Start with tiny budgets. (look at other solvers and multimodem)
+solver: SCS
+solver_max_iters: 200
+solver_verbose: false
+all_classes: false
+max_targets: 4
+# Choose the top 4 most dangerous classes instead of checking for each class
+
+unrolled_steps: 10
+unrolled_step_size: 0.01
+
+#Solvers: CLARABEL, ECOS, SCS, cvxpy 
+#The SOCP solver is computing a certificate 
+
+# Sparse SOCP budgets from the paper's E, S, T structure.
+nodes_per_layer: 8
+max_E: 4
+max_S: 2
+max_T: 2 
+prev_candidate_limit: 16
+
+#E: eta, S: sigma, T: tau
+
+# Training/evaluation switches.
+# use_socp_loss currently logs/adds a detached certificate term because CVXPY
+# differentiation is not implemented yet.  For publishable certificate training,
+# replace this backend with unrolled primal-dual or implicit KKT differentiation.
+use_socp_loss: true
+socp_every_n_batches: 1
+socp_samples_per_batch: 5
+# "Periodically compute the SOCP certificate and add its loss term to the clean cross-entropy." NOT use SOCP instead of clean training 
+# for every "socp_every_n_batches" batches the cert loss is calculated not for every var 
+
+#use GLS smoothing to loosen bounds
+use_rgs: false
+rgs_sigma: 0.001
+rgs_nps: 2
+
+eval_socp: false
+eval_socp_max_samples: 5
+eval_clean_max_batches: null
