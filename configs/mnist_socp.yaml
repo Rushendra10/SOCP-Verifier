@@ -4,8 +4,8 @@
 
 seed: 0
 data_dir: data
-checkpoint_dir: /home/grad/dsadig/SOCP/lp_mnist_dual/checkpoints 
-checkpoint_dir_GLS: /home/grad/dsadig/SOCP/lp_mnist_dual/checkpoints/GLS
+checkpoint_dir: checkpoints
+checkpoint_dir_GLS: checkpoints/GLS
 # checkpoints
 
 # Existing LP/Wong--Kolter MNIST architecture.

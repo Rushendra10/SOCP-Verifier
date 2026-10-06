@@ -173,12 +173,10 @@ checkpoints are present. They are not missing from this checkout.
 
 ## Evaluate a checkpoint
 
-After resolving the integration requirements, clone the repository and run
-evaluation from `src/`:
+After resolving the integration requirements, run evaluation from `src/`:
 
 ```bash
-git clone https://github.com/SadigDaniel/SOCP-Verifier.git
-cd SOCP-Verifier/src
+cd src
 ```
 
 Architecture dimensions must match the saved state dictionary. The evaluator
@@ -330,10 +328,7 @@ Retain `model.py`, `bound_layers.py`, `dual_bounds.py`, and all active verifier
 modules. In particular, the shared bound files are verification dependencies,
 even though their comments also discuss training. No files have been deleted.
 
-## Related project
+## Repository scope
 
-The folder-oriented documentation follows the organization of the companion
-[LP/SOCP project](https://github.com/SadigDaniel/SOCP/tree/main/lp_mnist_dual).
-That project documents a broader training workflow; this repository contains
-the verifier, saved checkpoints, configuration records, and archived loss
-experiments described above.
+This repository contains the verifier, saved checkpoints, configuration
+records, and archived loss experiments described above.
