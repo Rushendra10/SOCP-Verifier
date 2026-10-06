@@ -6,8 +6,10 @@ input perturbation box, propagates activation bounds, selects sparse lifted
 products, and solves a target-versus-true logit margin problem with CVXPY.
 
 The evaluation entry point supports a MNIST MLP, a MNIST CNN, and a CIFAR-10
-CNN5. Pretrained checkpoints and experiment configurations are included.
-Evaluation uses saved weights; retraining is not required.
+CNN5. Experiment configurations are included, but pretrained checkpoints and
+datasets are intentionally omitted. Evaluation requires a compatible checkpoint;
+the included data loaders can download MNIST and CIFAR-10 when network access is
+available.
 
 
 ## Repository structure
@@ -17,40 +19,11 @@ root, and folder names are case-sensitive.
 
 | Folder | Purpose | Contents |
 | --- | --- | --- |
-| [`checkpoints/`](checkpoints/) | Saved model weights for evaluation. | MNIST models under `eps_0.1/` and `eps_0.3/`; CIFAR-10 models under `cifar10/`. |
 | [`configs/`](configs/) | Records of model and training experiment settings. | Nine YAML files for MNIST/CIFAR-10 LP, SOCP, and smoothing experiments. The evaluator takes CLI arguments and does not load these YAML files. |
-| [`data/`](data/) | Local dataset storage. | A committed MNIST dataset cache. CIFAR-10 data is not included. This directory does not replace the missing Python loader module. |
 | [`scripts/`](scripts/) | Environment setup reference. | `create_env.sh`, containing Conda, PyTorch, utility, and conic-solver installation commands. See the setup note below before using it. |
 | [`src/`](src/) | Model definitions and shared bound routines. | `model.py`, `bound_layers.py`, `dual_bounds.py`, `deeppoly_bounds.py`, and the `SOCP/` package. |
 | [`src/SOCP/`](src/SOCP/) | Active verifier implementation and documentation. | Evaluation, certificates, bounds, influence scoring, coupling selection, conic solvers, utilities, `__init__.py`, `README.md`, and `FLOWCHART.md`. |
 | [`src/SOCP/Old_codes/`](src/SOCP/Old_codes/) | Archived implementations and training experiments. | An older certificate API, affine conversion helpers, and three loss modules. These are separate from the active evaluation path. |
-
-### Checkpoint folders
-
-The epsilon folder names record experiment budgets; evaluation epsilon is set
-separately with `--epsilon`. Checkpoint names describe training variants, while
-verification uses the same active SOCP pipeline.
-
-| Folder under `checkpoints/` | Contents |
-| --- | --- |
-| `eps_0.1/` | `IBP_cnn.pt`, `dual_WK_cnn_ignore.pt`, `dual_tiny_gls.pt`, and five `tmp_*.pt` CNN checkpoints covering IBP, CROWN-IBP, DeepPoly, dual-WK, and dual training variants. |
-| `eps_0.3/` | Five `*_cnn_standard.pt` MNIST checkpoints: CROWN-IBP, DeepPoly, dual, dual-WK, and IBP. |
-| `cifar10/` | CIFAR-10 checkpoint groups for standard, GLS, REG, and IGNORE experiments. |
-| `cifar10/eps_0.0088889/` | Five `cifar10_*_cnn5_standard.pt` checkpoints: CROWN-IBP, DeepPoly, dual, dual-WK, and IBP. |
-| `cifar10/GLS/` | Gaussian/local smoothing experiment checkpoints, grouped by epsilon. |
-| `cifar10/GLS/eps_0.0088889/` | Six `cifar10_*_cnn5_gls*.pt` files, including dual and `*_gls_test.pt` variants. |
-| `cifar10/REG/` | Regularizer experiment checkpoints, including a nested `GLS/` group. |
-| `cifar10/REG/eps_0.0088889/` | `cifar10_dual_cnn5_socp_standard_new.pt`. |
-| `cifar10/REG/GLS/` | Combined regularizer and smoothing checkpoint group. |
-| `cifar10/REG/GLS/eps_0.0088889/` | `cifar10_dual_cnn5_socp_gls_bad.pt`, `cifar10_dual_cnn5_socp_gls_test.pt`, and `cifar10_dual_wk_cnn5_socp_gls_test.pt`. |
-| `cifar10/IGNORE/` | Additional experiment snapshots, with standard and `GLS/` subgroups. The folder name does not define a verifier mode. |
-| `cifar10/IGNORE/eps_0.0088889/` | `cifar10_dual_cnn5_standard.pt`. |
-| `cifar10/IGNORE/GLS/` | Additional smoothing snapshot group. |
-| `cifar10/IGNORE/GLS/eps_0.0088889/` | `cifar10_dual_cnn5_gls.pt`. |
-
-Checkpoint labels such as `tmp`, `test`, and `bad` are retained experiment
-filenames, not measured performance guarantees. Choose the checkpoint you want
-to evaluate and match its architecture parameters.
 
 ### Configuration files
 
@@ -67,13 +40,6 @@ to evaluate and match its architecture parameters.
 Training entry points are not included in this repository. These configurations
 provide experiment context; a filename does not automatically select the
 evaluator's model type or gamma backend.
-
-### Dataset folders
-
-| Folder | Contents |
-| --- | --- |
-| `data/MNIST/` | MNIST dataset cache. |
-| `data/MNIST/raw/` | Training/test images and labels in IDX format, plus their compressed `.gz` copies: `train-images-idx3-ubyte`, `train-labels-idx1-ubyte`, `t10k-images-idx3-ubyte`, and `t10k-labels-idx1-ubyte`. |
 
 ### Source files
 
@@ -149,11 +115,9 @@ archived CNN loss additionally needs `cvxpylayers`; evaluation does not.
 
 The following must be resolved for a fresh checkout to run:
 
-1. **Restore `src/data.py`.** The evaluator imports `get_mnist_loaders` and
-   `get_cifar10_loaders`. Each must return `(train_loader, test_loader)` and
-   accept the data directory plus `batch_size` and `test_batch_size`. Ensure
-   deterministic test ordering and preprocessing consistent with the saved
-   checkpoint and the [0, 1] input domain.
+1. **Provide a compatible checkpoint.** Model weights are not distributed.
+   Architecture arguments and preprocessing must match the supplied checkpoint
+   and the verifier's [0, 1] input domain.
 2. **Align shared-module imports with the launch layout.** The examples run
    from `src/`, where the evaluator imports `model`, `data`, and
    `dual_bounds` as top-level modules. However, `dual_bounds.py` uses
@@ -164,12 +128,12 @@ The following must be resolved for a fresh checkout to run:
    use top-level `bound_layers` and `dual_bounds` imports in those modules.
    Alternatively, convert the entry point and its dependencies together to a
    consistent `src` package layout.
-3. **Supply CIFAR-10 data through the loader.** Only MNIST raw files are
-   committed. Configure the restored loader to download or find CIFAR-10
-   under the chosen `--data_dir`.
+3. **Provide dataset access.** `src/data.py` uses torchvision to download MNIST
+   or CIFAR-10 under the chosen `--data_dir`. Pre-populate that location when
+   evaluation must run without network access.
 
-Model builders, interval helpers, both legacy backend files, and pretrained
-checkpoints are present. They are not missing from this checkout.
+Model builders, interval helpers, both legacy backend files, and experiment
+configurations are present. Model weights and datasets are not distributed.
 
 ## Evaluate a checkpoint
 
@@ -181,15 +145,13 @@ cd src
 
 Architecture dimensions must match the saved state dictionary. The evaluator
 accepts either a state dictionary directly or a dictionary containing it under
-the `model` key. The examples use checkpoint paths present in the repository
-and dimensions recorded in the supplied examples/configurations; checkpoint
-loading has not been runtime-tested here.
+the `model` key. Replace the placeholder paths below with compatible checkpoints.
 
 ### MNIST CNN
 
 ```bash
 python -m SOCP.eval_SOCP_robustness \
-  --checkpoint ../checkpoints/eps_0.3/ibp_cnn_standard.pt \
+  --checkpoint /path/to/mnist_checkpoint.pt \
   --data_dir ../data --model_type cnn \
   --n1 16 --n2 32 --linear_size 100 --epsilon 0.3 \
   --max_E 8 --max_S 4 --max_T 4 --prev_candidate_limit 32 \
@@ -205,7 +167,7 @@ defaults, so pass the widths explicitly.
 
 ```bash
 python -m SOCP.eval_SOCP_robustness \
-  --checkpoint ../checkpoints/cifar10/eps_0.0088889/cifar10_deeppoly_cnn5_standard.pt \
+  --checkpoint /path/to/cifar10_checkpoint.pt \
   --data_dir ../data --model_type cifar10 \
   --n1 24 --n2 48 --n3 96 --linear_size 192 --epsilon 0.0088889 \
   --max_E 8 --max_S 4 --max_T 4 --prev_candidate_limit 16 \
@@ -319,16 +281,15 @@ experiments.
 | `src/SOCP/Old_codes/` | Archive or omit if only active checkpoint evaluation is required. Its loss modules are training experiments, and some archived imports still refer to their former locations. |
 | `configs/` | Keep for experiment provenance; the evaluator does not require training configurations. |
 | `src/deeppoly_bounds.py` | Optional for this evaluator, including when evaluating a DeepPoly-trained checkpoint. The checkpoint's training method does not select a DeepPoly verification backend. |
-| MNIST training IDX files and compressed copies | The active evaluator uses the test loader. Whether training data can be omitted depends on how the restored loader constructs its returned loaders. Compressed copies are dataset cache material, not Python dependencies. |
-| Extra checkpoint variants | Keep the models you intend to evaluate. Filename labels alone are insufficient to decide which experimental weights to discard. |
 | `socp_solver_old.py`, `socp_relaxation_old.py` | Keep to preserve the documented legacy fallback. |
 | `FLOWCHART.md` and module README | Optional runtime documentation. |
 
 Retain `model.py`, `bound_layers.py`, `dual_bounds.py`, and all active verifier
 modules. In particular, the shared bound files are verification dependencies,
-even though their comments also discuss training. No files have been deleted.
+even though their comments also discuss training. Checkpoints and dataset files
+are intentionally excluded from this distribution.
 
 ## Repository scope
 
-This repository contains the verifier, saved checkpoints, configuration
-records, and archived loss experiments described above.
+This repository contains verifier code, configuration records, and archived
+loss experiments. It does not contain pretrained weights or dataset files.
